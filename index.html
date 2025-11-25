@@ -292,7 +292,7 @@
                     Icons[pascalKey] = (props) => <LucideIcon name={key} {...props} />;
                 });
             } else {
-                throw new Error("Lucide_icons_library_failed_to_load.");
+                throw new Error("Lucide_icons_library_failed-to_load.");
             }
 
             const SafeIcon = (name) => Icons[name] || (() => null);
@@ -2019,12 +2019,12 @@
                         {/* MOBILE/TASKBAR HEADER (Visible on mobile, hidden on sm+) */}
                         <div className={`fixed top-0 left-0 right-0 h-12 bg-retro-panel border-b-2 border-retro-border z-50 flex justify-between items-center px-2 sm:hidden transition-opacity duration-500 ${appOpacityClass}`}>
                             {/* FIX: Left Side - SYS_VER + SEC + TIME on one line */}
-                            <div className="flex items-center text-left font-pixel text-[0.7rem] text-retro-dim h-full">
+                            <div className="flex items-center text-left font-pixel text-[0.7rem] h-full text-retro-accent">
                                 <span>{format64Bit('SYS_VER: 64.0.1')} | {format64Bit('SEC: 07-G')} | {currentTime.split(' | ')[0]}</span>
                             </div>
                             {/* FIX: Right Side - NET + MEM on one line */}
-                            <div className="flex items-center text-right font-pixel text-[0.7rem] text-retro-dim h-full">
-                                <span className="text-retro-accent">{format64Bit('NET: SECURE')} | {format64Bit('MEM: 640K')}</span>
+                            <div className="flex items-center text-right font-pixel text-[0.7rem] h-full text-retro-accent">
+                                <span>{format64Bit('NET: SECURE')} | {format64Bit('MEM: 640K')}</span>
                             </div>
                         </div>
 
