@@ -810,8 +810,6 @@
                     // --- REMOVED CAD BACKGROUND GRID DRAWING ---
 
                     const foodColor = isDayMode ? '#18181b' : '#ffffff';
-                    const headColor = isDayMode ? 'var(--accent-main)' : '#fef08a';
-                    const bodyColor = isDayMode ? '#d97706' : '#eab308';
                     const glowColor = isDayMode ? 'var(--accent-main)' : '#ffffff';
 
                     ctx.fillStyle = foodColor;
@@ -1092,7 +1090,7 @@
                 const formatRead = (text) => {
                     if (typeof text !== 'string') return text;
                     // Replace underscores with spaces, and collapse multiple spaces introduced during cleanup
-                    return text.replace(/_/g, ' ').replace(/  +/g, ' ').trim();
+                    return text.replace(/_/g, ' ').replace(/  +/g, ' ').trim();
                 };
 
                 // Determine the correct hover text color class based on the site's mode
@@ -1275,8 +1273,8 @@
             // --- NEW COMPONENT: ACCESSIBILITY MENU (Memoized) ---
             const A11yMenu = React.memo(({ settings, toggleSetting, setSetting, closeMenu }) => {
                 return (
-                    // Menu placement: Absolute on desktop (left 24), fixed/bottom/full-width on mobile
-                    <div className="absolute left-24 bottom-4 w-64 bg-retro-panel border-2 border-retro-accent p-4 shadow-[0_0_20px_rgba(0,0,0,0.5)] z-[100] font-pixel text-xs max-h-[80vh] overflow-y-auto scrollbar-hide sm:left-4 sm:w-[calc(100vw-3rem)] sm:bottom-16 md:absolute md:w-64 md:bottom-4 md:left-24">
+                    // FIX: Changed positioning to fixed, constrained by mobile nav (bottom-16) and header (top-12)
+                    <div className="fixed left-0 right-0 bottom-16 w-full max-w-full bg-retro-panel border-2 border-retro-accent p-4 shadow-[0_0_20px_rgba(0,0,0,0.5)] z-[100] font-pixel text-xs max-h-[calc(100vh-7rem)] overflow-y-auto scrollbar-hide md:absolute md:w-64 md:bottom-4 md:left-24 md:max-h-[80vh]">
                         <CornerBrackets color="border-retro-accent" />
                         
                         <div className="flex justify-between items-center mb-4 border-b border-retro-border pb-2 sticky top-0 bg-retro-panel z-10">
@@ -1375,6 +1373,7 @@
             // --- COMPONENT: CAD WINDOW FRAME (Memoized) ---
             const WindowFrame = React.memo(({ id, title, icon: Icon, isOpen, isMinimized, onClose, onMinimize, onFocus, zIndex, position, onMouseDown, children }) => {
                 // Determine if we are on a mobile size screen
+                // Note: Tailwind 'sm' is 640px. 
                 const isMobile = window.innerWidth < 640; 
                 
                 if (!isOpen) return null;
@@ -1423,7 +1422,8 @@
 
                 // Conditional styling for Mobile (w-full h-full) vs Desktop (fixed size and position)
                 const windowClasses = isMobile 
-                    ? `fixed inset-0 w-full h-full border-none` 
+                    // FIX: Constrain window between fixed header (top-12) and mobile taskbar (bottom-16)
+                    ? `fixed top-12 bottom-16 left-0 right-0 w-full border-none` 
                     : `absolute w-[95%] h-[85%] sm:max-w-[900px] sm:max-h-[650px]`;
                 
                 const windowStyle = isMobile 
@@ -1513,9 +1513,6 @@
                 );
             });
 
-            // --- COMPONENT: WINDOW TASKBAR (Removed) ---
-            // const WindowTaskbar = ... (definition removed)
-            
             // --- MAIN APP COMPONENT ---
             function App() {
                 // --- STATE DECLARATIONS (Must come first for scope) ---
@@ -1923,4 +1920,3 @@
     </script>
 </body>
 </html>
-
