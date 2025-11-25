@@ -137,6 +137,15 @@
         /* Error Screen Style */
         #error-display { display: none; color: #ef4444; background: #18181b; padding: 20px; font-family: monospace; height: 100vh; width: 100vw; position: fixed; top: 0; left: 0; z-index: 10000; }
 
+        /* --- GUARANTEED INITIAL BLACK SCREEN --- */
+        /* Forces the body content to be black until the scripts take over. */
+        #root {
+            background-color: black;
+            position: relative; /* Ensure the fixed BootScreen covers it */
+            height: 100%;
+            width: 100%;
+        }
+
         /* --- GRANULAR ACCESSIBILITY STYLES --- */
         
         /* 1. Readable Font */
@@ -484,7 +493,8 @@
 
             // --- BOOT SCREEN COMPONENT ---
             const BootScreen = ({ onComplete }) => {
-                const [stage, setStage] = useState('LOADING'); // Initial stage set to LOADING
+                // RESTORED STAGE LOGIC: LOADING -> WELCOME -> DONE
+                const [stage, setStage] = useState('LOADING'); 
                 const [progress, setProgress] = useState(0);
                 const [status, setStatus] = useState(format64Bit('INITIATING SYSTEM'));
                 const [welcomeOpacity, setWelcomeOpacity] = useState(0); 
@@ -508,16 +518,18 @@
                         let currentPhase = 0;
                         
                         const updateProgress = () => {
-                            // If loading is already complete, stop interval
+                            
+                            // Check for completion first
                             if (currentPhase >= phases.current.length) {
                                 clearInterval(interval);
-                                setStatus(format64Bit('BOOT SEQUENCE COMPLETE')); 
+                                setStatus(format64Bit('BOOT COMPLETE. ENGAGING USER INTERFACE.'));
                                 
-                                // BLACKOUT 1
+                                // FIX 1: Pause for 1 second showing BOOT COMPLETE message
                                 timeout = setTimeout(() => {
-                                    setStage('WELCOME'); // Move to welcome stage (blackout ends)
-                                }, 800); 
-                                return; // Exit updateProgress early
+                                    setStage('WELCOME'); // Move to welcome stage
+                                }, 1000); // 1000ms pause
+                                
+                                return;
                             }
 
                             const phase = phases.current[currentPhase];
@@ -538,7 +550,7 @@
                                 
                                 // Final check for 100% completion (only runs once)
                                 if (phase.target === 100 && newProgress >= 99.99) {
-                                    currentPhase++; // Ensure we hit the exit condition next tick
+                                    currentPhase++; 
                                     newProgress = 100;
                                 }
 
@@ -549,6 +561,7 @@
                         interval = setInterval(updateProgress, 50); 
                     }
                     
+                    // NEW/RESTORED: Handle WELCOME stage
                     else if (stage === 'WELCOME') {
                         let fadeOutTimeout;
                         
@@ -560,7 +573,7 @@
                              setWelcomeOpacity(0); // Fade Out
                         }, 2500); 
 
-                        // 3. Trigger final blackout after 3000ms
+                        // 3. Trigger final launch after 3000ms
                         const finalLaunchTimeout = setTimeout(() => {
                             setStage('DONE');
                             setTimeout(onComplete, 500); 
@@ -577,16 +590,17 @@
                         if (timeout) clearTimeout(timeout);
                     };
 
-                }, [stage, onComplete]); // Re-run effect when stage changes
+                }, [onComplete, stage]); // Re-run effect when stage changes
 
                 // --- RENDER LOGIC ---
 
                 if (stage === 'WELCOME') {
+                    // This is the WELCOME screen showing "WELCOME"
                     return (
-                        <div className="fixed inset-0 bg-black z-[100] flex flex-col justify-center items-center font-pixel text-retro-accent">
+                        // This element provides the black background for the transition
+                        <div className="fixed inset-0 bg-black z-[100] flex flex-col justify-center items-center font-pixel text-retro-accent transition-opacity duration-500" style={{opacity: welcomeOpacity}}>
                             {/* FIX: Reduced text size on mobile (sm:hidden) from text-6xl to text-4xl */}
                             <h1 className={`text-4xl sm:text-6xl font-pixel-bold text-retro-accent drop-shadow-[0_0_15px_var(--accent-glow)] transition-opacity duration-500`}
-                                style={{ opacity: welcomeOpacity }}
                             >
                                 {format64Bit('WELCOME')}
                             </h1>
@@ -594,17 +608,17 @@
                     );
                 }
                 
-                // RENDER: LOADING SCREEN / BLACKOUT 1 (when stage is LOADING)
-                // When progress hits 100%, the opacity fades out for the blackout (transition: opacity-0)
-                const isLoadingVisible = progress < 100;
-                const opacityClass = isLoadingVisible ? 'opacity-100' : 'opacity-0';
+                // RENDER: LOADING SCREEN
+                // Use opacity-0 for fade out when transitioning to WELCOME/DONE
+                // When stage is 'LOADING' or 'DONE', we use this component. The WELCOME stage is handled above.
+                const opacityClass = (stage === 'LOADING') ? 'opacity-100' : 'opacity-0 pointer-events-none';
 
-                // Only render the loading screen wrapper if we are in the LOADING stage
+                // Only render the loading screen wrapper if we are in the LOADING stage or DONE (during its brief fade out)
                 if (stage === 'LOADING' || stage === 'DONE') {
                     return (
-                        <div className="fixed inset-0 bg-black z-[100] p-8 font-pixel text-retro-accent text-lg md:text-xl flex flex-col justify-center items-center overflow-hidden">
+                        <div className={`fixed inset-0 bg-black z-[100] p-8 font-pixel text-retro-accent text-lg md:text-xl flex flex-col justify-center items-center overflow-hidden transition-opacity duration-500 ${opacityClass}`}>
                             
-                            <div className={`w-full max-w-xl mx-auto space-y-4 transition-opacity duration-300 ${opacityClass}`}> 
+                            <div className={`w-full max-w-xl mx-auto space-y-4`}> 
                                 
                                 {/* FIX: Reduced text size on mobile from text-3xl to text-xl */}
                                 <h1 className="text-xl sm:text-3xl font-pixel-bold text-center drop-shadow-[0_0_10px_var(--accent-glow)]">ATLAS_OS V64.0</h1>
@@ -613,7 +627,7 @@
                                 {/* FIX: Reduced text size on mobile from text-sm to text-xs */}
                                 <div className="flex items-center justify-start text-base text-retro-dim/80 h-6">
                                     <span className="text-retro-accent">{format64Bit('STATUS:')}</span>
-                                    <span className="ml-2 animate-pulse text-retro-text text-xs sm:text-sm">
+                                    <span className={`ml-2 text-retro-text text-xs sm:text-sm ${progress < 100 ? 'animate-pulse' : ''}`}>
                                         {status} 
                                     </span>
                                 </div>
@@ -954,9 +968,15 @@
                     
                     <div className="relative z-10 text-center">
                         {gameStatus === 'IDLE' && (
-                        <div className="animate-pulse space-y-4">
-                            {/* FIX: Reduced text size on mobile from text-4xl to text-3xl */}
-                            <h2 className="text-3xl sm:text-4xl font-pixel-bold text-retro-accent drop-shadow-[0_0_10px_var(--accent-dim)]">{format64Bit('SYSTEM IDLE')}</h2>
+                        <div className="animate-pulse space-y-4"> {/* FIX: Reverted space-y-2 to space-y-4 for better spacing */}
+                            {/* FIX: Conditional rendering for mobile vs desktop idle text */}
+                            <h2 className="text-3xl sm:text-4xl font-pixel-bold text-retro-accent drop-shadow-[0_0_10px_var(--accent-dim)] leading-none mb-2 mt-[-1rem] sm:mt-0"> 
+                                {/* Mobile (Default): Two lines */}
+                                <span className="block sm:hidden">{format64Bit('SYSTEM')}</span>
+                                <span className="block sm:hidden">{format64Bit('IDLE')}</span>
+                                {/* Desktop (sm+): Single line, original text restored */}
+                                <span className="hidden sm:block leading-tight">{format64Bit('SYSTEM IDLE')}</span>
+                            </h2>
                             
                             <div className="inline-flex flex-col items-center gap-2 border-2 border-retro-accent bg-retro-panel/80 px-8 py-4 cursor-pointer hover:bg-retro-accent-dim transition-colors" onClick={startGame}>
                                 <div className="flex items-center gap-3">
@@ -1858,6 +1878,8 @@
                 // Get list of navigation items for the Taskbar
                 // The order in which they appear here is the order in the mobile taskbar
                 const taskbarItems = windowsState.filter(w => ['about', 'projects', 'experience', 'contact'].includes(w.id));
+                
+                // FIX 2: Updated logic for theme button to only use theme colors, removing green/red logic.
                 const utilItems = [
                     { 
                         id: 'crt', 
@@ -1865,20 +1887,26 @@
                         icon: Power, 
                         active: crtEnabled, 
                         toggle: () => setCrtEnabled(!crtEnabled), 
-                        // FIX: Updated class for CRT button to always have a strong border/color contrast when ON or OFF
+                        // CRT button only uses green/red status colors
                         className: crtEnabled 
-                            ? "!border-green-500 !text-green-500 hover:!text-green-400 hover:!border-green-400" 
-                            : "!border-retro-border !text-retro-dim hover:!border-retro-accent hover:!text-retro-accent"
+                            ? "!text-green-500 hover:!text-green-400" 
+                            : "!text-red-600 hover:!text-red-500"
                     },
-                    { id: 'theme', label: isDayMode ? format64Bit("NIGHT") : format64Bit("DAY"), icon: isDayMode ? Moon : Sun, active: false, toggle: () => setIsDayMode(!isDayMode),
+                    { 
+                        id: 'theme', 
+                        label: isDayMode ? format64Bit("NIGHT") : format64Bit("DAY"), 
+                        icon: isDayMode ? Moon : Sun, 
+                        active: false, 
+                        toggle: () => setIsDayMode(!isDayMode),
+                        // Theme button only uses accent/text colors (no red/green status)
                         className: isDayMode 
-                            ? "!border-black !text-black hover:!text-zinc-700 hover:!border-zinc-700 hover:shadow-[0_0_10px_rgba(0,0,0,0.2)]" 
-                            : "!border-white !text-white hover:!text-zinc-200 hover:!border-zinc-200 hover:shadow-[0_0_10px_rgba(255,255,255,0.5)]"
+                            ? "text-black hover:!text-zinc-700" 
+                            : "text-white hover:!text-zinc-200"
                     },
                     // FIX 1: Renamed from 'A11Y' to 'SYS'
                     { id: 'a11y', label: format64Bit('SYS'), icon: Accessibility, active: a11yMenuOpen, toggle: () => setA11yMenuOpen(!a11yMenuOpen),
                         className: a11yMenuOpen
-                            ? "!border-retro-accent !text-retro-accent !bg-retro-accent/10" 
+                            ? "text-retro-accent !bg-retro-accent/10" 
                             : ""
                     }
                 ];
@@ -1912,13 +1940,16 @@
                         {/* MOBILE/TASKBAR HEADER (Visible on mobile, hidden on sm+) */}
                         {/* FIX: Removed YILIN_ZHU title and switched to justify-between, adding system info on the left */}
                         <div className={`fixed top-0 left-0 right-0 h-12 bg-retro-panel border-b-2 border-retro-border z-50 flex justify-between items-center px-2 sm:hidden transition-opacity duration-500 ${appOpacityClass}`}>
-                            {/* FIX: Added system info on phone version (SYS_VER, SECTOR, TIME, NET, MEM) */}
+                            {/* Left Side: SYS_VER and TIME */}
                             <div className="flex flex-col text-left font-pixel text-[0.55rem] text-retro-dim leading-tight">
                                 <span>{format64Bit('SYS_VER: 64.0.1')} | {format64Bit('SEC: 07-G')}</span>
                                 <span>{format64Bit('TIME:')} {currentTime.split(' | ')[0]}</span>
-                                <span className="text-retro-accent">{format64Bit('NET: SECURE')} | {format64Bit('MEM: 640K')}</span>
                             </div>
-                            {/* FIX: Removed utility buttons from here, leaving them only in the bottom bar */}
+                            {/* Right Side: NET and MEM status */}
+                            <div className="flex flex-col text-right font-pixel text-[0.55rem] text-retro-dim leading-tight">
+                                <span className="text-retro-accent">{format64Bit('NET: SECURE')}</span>
+                                <span className="text-retro-accent">{format64Bit('MEM: 640K')}</span>
+                            </div>
                         </div>
 
                         {/* DESKTOP SIDEBAR (w-20, hidden on sm/mobile) */}
@@ -2058,12 +2089,22 @@
                                 <div className="h-full border-l-2 border-retro-border/50 mx-1"></div>
 
                                 {utilItems.map(item => {
-                                    // FIX 1: Removed border-2 border-retro-border from baseClasses
-                                    const baseClasses = 'w-[3rem] h-[3rem] !text-sm flex flex-col items-center justify-center transition-all duration-200 bg-retro-panel relative shadow-none hover:shadow-none hover:translate-y-0';
+                                    // Base classes for utility buttons (no shadow/up-down effect, NO BORDER, NO BG)
+                                    const baseClasses = 'w-[3rem] h-[3rem] !text-sm flex flex-col items-center justify-center transition-all duration-200 bg-retro-panel relative shadow-none hover:shadow-none hover:translate-y-0 !border-0';
                                     
                                     // Since ToolIcon is used here, we override ToolIcon's base classes which include borders on desktop, 
                                     // but ensure mobile explicitly avoids borders by combining base mobile classes with item-specific classes.
-                                    const finalClasses = `${baseClasses} ${item.className.replace('!border-retro-border', '')} !border-0`; // Remove any lingering border class
+                                    // FIX 2: Removed all border classes, simplified logic for text coloring based on status.
+                                    let colorClass = 'text-retro-dim hover:text-retro-accent';
+                                    if (item.id === 'crt') {
+                                        colorClass = crtEnabled ? '!text-green-500 hover:!text-green-400' : '!text-red-600 hover:!text-red-500';
+                                    } else if (item.id === 'theme') {
+                                        colorClass = isDayMode ? '!text-black hover:!text-zinc-700' : '!text-white hover:!text-zinc-200';
+                                    } else if (item.id === 'a11y') {
+                                        colorClass = a11yMenuOpen ? 'text-retro-accent !bg-retro-accent/10' : 'text-retro-dim hover:text-retro-accent';
+                                    }
+
+                                    const finalClasses = `${baseClasses} ${colorClass}`;
                                     
                                     return (
                                         <button 
