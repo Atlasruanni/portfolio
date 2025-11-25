@@ -1382,27 +1382,23 @@
                 </div>
             ));
 
-            // --- NEW COMPONENT: ACCESSIBILITY MENU (Memoized) ---
-            const A11yMenu = React.memo(({ settings, toggleSetting, setSetting, closeMenu }) => {
+            // --- NEW COMPONENT: SYS MENU (formerly A11yMenu) ---
+            const SysMenu = React.memo(({ settings, toggleSetting, setSetting, closeMenu }) => {
+                // Determine if we are on a mobile size screen to hide certain options
+                const isMobile = window.innerWidth < 640;
+
                 return (
-                    // FIX: Changed positioning to fixed, constrained by mobile nav (bottom-16) and header (top-12)
-                    <div className="fixed left-0 right-0 bottom-16 w-full max-w-full bg-retro-panel border-2 border-retro-accent p-4 shadow-[0_0_20px_rgba(0,0,0,0.5)] z-[100] font-pixel text-xs max-h-[calc(100vh-7rem)] overflow-y-auto scrollbar-hide md:absolute md:w-64 md:bottom-4 md:left-24 md:max-h-[80vh]">
+                    // MODIFIED: Enforced overflow-hidden on mobile and desktop for unscrollable tab
+                    <div className="fixed left-0 right-0 top-12 bottom-16 w-full max-w-full bg-retro-panel border-2 border-retro-accent p-4 shadow-[0_0_20px_rgba(0,0,0,0.5)] z-[100] font-pixel text-xs overflow-hidden md:absolute md:w-64 md:bottom-4 md:left-24 md:top-auto">
                         <CornerBrackets color="border-retro-accent" />
                         
                         <div className="flex justify-between items-center mb-4 border-b border-retro-border pb-2 sticky top-0 bg-retro-panel z-10">
+                            {/* FIX 1: Renamed from 'SYS UTILS' */}
                             <span className="text-retro-accent font-bold tracking-widest">{format64Bit('SYS UTILS')}</span>
                             <button onClick={closeMenu} className="text-retro-dim hover:text-retro-accent"><X size={14}/></button>
                         </div>
 
                         <div className="space-y-3">
-                            {/* 1. Readable Font */}
-                            <div className="flex items-center justify-between group cursor-pointer" onClick={() => toggleSetting('font')}>
-                                <div className="flex items-center gap-2 text-retro-text group-hover:text-retro-accent">
-                                    <Type size={14} />
-                                    <span>{format64Bit('READABLE FONT')}</span>
-                                </div>
-                                <div className={`w-3 h-3 border border-retro-accent ${settings.font ? 'bg-retro-accent' : ''}`}></div>
-                            </div>
 
                             {/* 2. Reduce Motion */}
                             <div className="flex items-center justify-between group cursor-pointer" onClick={() => toggleSetting('motion')}>
@@ -1442,16 +1438,7 @@
                                 <div className={`w-3 h-3 border border-retro-accent ${settings.hue > 0 ? 'bg-retro-accent' : ''}`}></div>
                             </div>
 
-                            {/* 6. Wide Spacing */}
-                            <div className="flex items-center justify-between group cursor-pointer" onClick={() => toggleSetting('spacing')}>
-                                <div className="flex items-center gap-2 text-retro-text group-hover:text-retro-accent">
-                                    <MoveHorizontal size={14} />
-                                    <span>{format64Bit('WIDE SPACING')}</span>
-                                </div>
-                                <div className={`w-3 h-3 border border-retro-accent ${settings.spacing ? 'bg-retro-accent' : ''}`}></div>
-                            </div>
-
-                            {/* 7. Link Highlights */}
+                            {/* 7. Link Highlights (Moved up) */}
                             <div className="flex items-center justify-between group cursor-pointer" onClick={() => toggleSetting('links')}>
                                 <div className="flex items-center gap-2 text-retro-text group-hover:text-retro-accent">
                                     <Link2 size={14} />
@@ -1460,23 +1447,55 @@
                                 <div className={`w-3 h-3 border border-retro-accent ${settings.links ? 'bg-retro-accent' : ''}`}></div>
                             </div>
 
-                            {/* 8. Cursor Highlight (Halo) */}
-                            <div className="flex items-center justify-between group cursor-pointer" onClick={() => toggleSetting('highlight')}>
-                                <div className="flex items-center gap-2 text-retro-text group-hover:text-retro-accent">
-                                    <Target size={14} />
-                                    <span>{format64Bit('CURSOR HALO')}</span>
+                            {/* --- DESKTOP ONLY FEATURES --- */}
+                            {/* 8. Cursor Highlight (Halo) - REMOVED FOR MOBILE */}
+                            {!isMobile && (
+                                <div className="flex items-center justify-between group cursor-pointer" onClick={() => toggleSetting('highlight')}>
+                                    <div className="flex items-center gap-2 text-retro-text group-hover:text-retro-accent">
+                                        <Target size={14} />
+                                        <span>{format64Bit('CURSOR HALO')}</span>
+                                    </div>
+                                    <div className={`w-3 h-3 border border-retro-accent ${settings.highlight ? 'bg-retro-accent' : ''}`}></div>
                                 </div>
-                                <div className={`w-3 h-3 border border-retro-accent ${settings.highlight ? 'bg-retro-accent' : ''}`}></div>
+                            )}
+
+                            {/* 9. Reading Guide - REMOVED FOR MOBILE */}
+                            {!isMobile && (
+                                <div className="flex items-center justify-between group cursor-pointer" onClick={() => toggleSetting('guide')}>
+                                    <div className="flex items-center gap-2 text-retro-text group-hover:text-retro-accent">
+                                        <ScanLine size={14} />
+                                        <span>{format64Bit('READING GUIDE')}</span>
+                                    </div>
+                                    <div className={`w-3 h-3 border border-retro-accent ${settings.guide ? 'bg-retro-accent' : ''}`}></div>
+                                </div>
+                            )}
+                            
+                            {/* --- MOVED TO BOTTOM --- */}
+
+                            {/* 1. Readable Font (MOVED TO BOTTOM) */}
+                            <div className="flex items-center justify-between group cursor-pointer" onClick={() => toggleSetting('font')}>
+                                {/* MODIFIED: Added group-hover:text-red-500 for caution effect */}
+                                <div className="flex items-center gap-2 text-retro-text group-hover:text-red-500">
+                                    <Type size={14} />
+                                    <span>{format64Bit('READABLE FONT')}</span>
+                                    {/* NEW: Added caution icon, red on hover */}
+                                    <AlertTriangle size={12} className="text-yellow-500 opacity-0 group-hover:opacity-100 group-hover:text-red-500 transition-opacity" title={format64Bit("CAUTION: Modifies_font_and_layout")}/>
+                                </div>
+                                <div className={`w-3 h-3 border border-retro-accent ${settings.font ? 'bg-retro-accent' : ''}`}></div>
                             </div>
 
-                            {/* 9. Reading Guide */}
-                            <div className="flex items-center justify-between group cursor-pointer" onClick={() => toggleSetting('guide')}>
-                                <div className="flex items-center gap-2 text-retro-text group-hover:text-retro-accent">
-                                    <ScanLine size={14} />
-                                    <span>{format64Bit('READING GUIDE')}</span>
+                            {/* 6. Wide Spacing - MOVED TO BOTTOM */}
+                            <div className="flex items-center justify-between group cursor-pointer" onClick={() => toggleSetting('spacing')}>
+                                {/* MODIFIED: Added group-hover:text-red-500 to change text color on hover */}
+                                <div className="flex items-center gap-2 text-retro-text group-hover:text-red-500">
+                                    <MoveHorizontal size={14} />
+                                    <span>{format64Bit('WIDE SPACING')}</span>
+                                    {/* MODIFIED: Added group-hover:text-red-500 to change caution icon color on hover */}
+                                    <AlertTriangle size={12} className="text-yellow-500 opacity-0 group-hover:opacity-100 group-hover:text-red-500 transition-opacity" title={format64Bit("CAUTION: Modifies_layout_structure")}/>
                                 </div>
-                                <div className={`w-3 h-3 border border-retro-accent ${settings.guide ? 'bg-retro-accent' : ''}`}></div>
+                                <div className={`w-3 h-3 border border-retro-accent ${settings.spacing ? 'bg-retro-accent' : ''}`}></div>
                             </div>
+
                         </div>
                     </div>
                 )
@@ -1836,7 +1855,8 @@
                             ? "!border-black !text-black hover:!text-zinc-700 hover:!border-zinc-700 hover:shadow-[0_0_10px_rgba(0,0,0,0.2)]" 
                             : "!border-white !text-white hover:!text-zinc-200 hover:!border-zinc-200 hover:shadow-[0_0_10px_rgba(255,255,255,0.5)]"
                     },
-                    { id: 'a11y', label: format64Bit('A11Y'), icon: Accessibility, active: a11yMenuOpen, toggle: () => setA11yMenuOpen(!a11yMenuOpen),
+                    // FIX 1: Renamed from 'A11Y' to 'SYS'
+                    { id: 'a11y', label: format64Bit('SYS'), icon: Accessibility, active: a11yMenuOpen, toggle: () => setA11yMenuOpen(!a11yMenuOpen),
                         className: a11yMenuOpen
                             ? "!border-retro-accent !text-retro-accent !bg-retro-accent/10" 
                             : ""
@@ -1931,7 +1951,7 @@
                         </div>
 
                         {a11yMenuOpen && (
-                            <A11yMenu 
+                            <SysMenu // FIX 1: Renamed component reference
                                 settings={a11ySettings} 
                                 toggleSetting={toggleA11ySetting} 
                                 setSetting={setA11ySettingValue}
@@ -1944,7 +1964,7 @@
                         <div className={`flex-1 relative bg-retro-bg overflow-hidden pt-12 sm:pt-0 transition-opacity duration-500 ${appOpacityClass}`}>
                             
                             {/* Background Grid - HIDE ALL BACKGROUND GRIDS/PATTERNS */}
-                            <div className="absolute top-8 right-8 text-retro-dim font-pixel-bold text-8xl opacity-10 pointer-events-none select-none tracking-tighter hidden sm:block">{format64Bit('ATLAS OS')}</div>
+                            <div className="absolute top-8 right-8 text-retro-dim font-pixel-bold text-8xl opacity-10 pointer-events-none select-none hidden sm:block">{format64Bit('ATLAS OS')}</div>
                             
                             {/* Bottom Left System Info (Desktop only) */}
                             <div className="absolute bottom-8 left-8 text-retro-accent font-pixel text-sm pointer-events-none hidden sm:block">
@@ -2015,11 +2035,7 @@
                                 <div className="h-full border-l-2 border-retro-border/50 mx-1"></div>
 
                                 {utilItems.map(item => {
-                                    // Base classes for mobile buttons (no shadow/up-down effect)
                                     const baseClasses = 'w-[3rem] h-[3rem] !text-sm flex flex-col items-center justify-center transition-all duration-200 border-2 bg-retro-panel relative shadow-none hover:shadow-none hover:translate-y-0';
-                                    
-                                    // Custom class handling for CRT/Theme/A11Y buttons
-                                    // Note: `item.className` holds custom border/text colors and overrides the default mobile classes below.
                                     
                                     const finalClasses = `${baseClasses} ${item.className}`;
                                     
