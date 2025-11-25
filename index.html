@@ -727,7 +727,7 @@
                         const canvas = canvasRef.current; 
                         const parent = canvas.parentElement;
                         canvas.width = parent.clientWidth;
-                        // Subtract space for mobile header (3rem/48px) and mobile footer (3.5rem/56px) if needed
+                        // Subtract space for mobile header (3rem) and mobile footer (4rem) if needed
                         if (window.innerWidth < 640) {
                             // Header (h-12=48px) + Footer (h-14=56px) = 104px total
                             canvas.height = parent.clientHeight - 104; 
@@ -962,8 +962,8 @@
                 }, [gameStatus, isDayMode]); 
 
                 return (
-                    // FIX 3: Adjusted vertical alignment for mobile idle screen to better center the content
-                    <div className="absolute inset-0 flex items-center justify-center z-0 pt-12 pb-14 sm:p-0" onClick={() => window.focus()}>
+                    // FIX: Added pt-12 (3rem) and pb-16 (4rem) offset on mobile to account for fixed header/footer.
+                    <div className="absolute inset-0 flex items-center justify-center z-0 pt-12 pb-16 sm:p-0" onClick={() => window.focus()}>
                     <canvas ref={canvasRef} className="absolute inset-0 z-0 block opacity-95" />
                     
                     <div className="relative z-10 text-center">
@@ -1411,8 +1411,7 @@
 
                 return (
                     // MODIFIED: Enforced overflow-hidden on mobile and desktop for unscrollable tab
-                    // FIX: Changed bottom constraint to h-14 (56px)
-                    <div className="fixed left-0 right-0 top-12 bottom-[3.5rem] w-full max-w-full bg-retro-panel border-2 border-retro-accent p-4 shadow-[0_0_20px_rgba(0,0,0,0.5)] z-[100] font-pixel text-xs overflow-hidden md:absolute md:w-64 md:bottom-4 md:left-24 md:top-auto">
+                    <div className="fixed left-0 right-0 top-12 bottom-16 w-full max-w-full bg-retro-panel border-2 border-retro-accent p-4 shadow-[0_0_20px_rgba(0,0,0,0.5)] z-[100] font-pixel text-xs overflow-hidden md:absolute md:w-64 md:bottom-4 md:left-24 md:top-auto">
                         <CornerBrackets color="border-retro-accent" />
                         
                         <div className="flex justify-between items-center mb-4 border-b border-retro-border pb-2 sticky top-0 bg-retro-panel z-10">
@@ -1576,7 +1575,7 @@
 
                 // Conditional styling for Mobile (w-full h-full) vs Desktop (fixed size and position)
                 const windowClasses = isMobile 
-                    // FIX: Constrain window between fixed header (h-12=top-12) and mobile taskbar (h-14=bottom-14)
+                    // FIX: Constrain window between fixed header (top-12) and mobile taskbar (bottom-16)
                     ? `fixed top-12 bottom-14 left-0 right-0 w-full border-none` 
                     : `absolute w-[95%] h-[85%] sm:max-w-[900px] sm:max-h-[650px]`;
                 
@@ -1880,9 +1879,8 @@
                 // The order in which they appear here is the order in the mobile taskbar
                 const taskbarItems = windowsState.filter(w => ['about', 'projects', 'experience', 'contact'].includes(w.id));
                 
-                // FIX 2: Updated logic for theme button to only use theme colors, removing green/red logic.
+                // FIX: Added Reset button here (for Mobile Footer)
                 const utilItems = [
-                    // FIX 1: Added Reset button to utilities
                     { id: 'reset', label: format64Bit('RESET'), icon: Grid, active: false, toggle: handleSystemReset },
                     { 
                         id: 'crt', 
@@ -1960,7 +1958,8 @@
                             <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-retro-panel via-retro-accent/20 to-retro-panel"></div>
                             <div className="flex flex-col items-center justify-center w-full gap-4 relative z-10">
                                 
-                                <ToolIcon label={format64Bit('RESET')} icon={Grid} onClick={handleSystemReset} active={false} shadowDirection="down" />
+                                {/* PC Reset Button (Manual Placement - KEPT) */}
+                                <ToolIcon label={format64Bit('RESET')} icon={Grid} onClick={handleSystemReset} active={false} shadowDirection="down" className="hover:!bg-red-600 hover:!text-white hover:!border-red-600" />
                                 
                                 {/* PDF Button */}
                                 <button 
@@ -1990,7 +1989,8 @@
                                 
                                 <div className="w-[2rem] h-[2px] bg-retro-border"></div>
                                 
-                                {utilItems.map(item => (
+                                {/* PC Utility Icons (Filtered to exclude Reset, as it is placed manually above) */}
+                                {utilItems.filter(item => item.id !== 'reset').map(item => (
                                     <ToolIcon 
                                         key={item.id}
                                         label={item.label} 
@@ -2005,7 +2005,7 @@
                         </div>
 
                         {a11yMenuOpen && (
-                            <SysMenu // FIX 1: Renamed component reference
+                            <SysMenu 
                                 settings={a11ySettings} 
                                 toggleSetting={toggleA11ySetting} 
                                 setSetting={setA11ySettingValue}
@@ -2061,16 +2061,13 @@
                             {/* Window Taskbar (Desktop only) - Removed based on user request */}
                             
                             {/* MOBILE NAVIGATION BAR (Visible on mobile) */}
-                            {/* FIX 2: Reduced height to h-14 for a slimmer bar */}
                             <div className="fixed bottom-0 left-0 right-0 h-14 bg-retro-panel border-t-2 border-retro-border z-50 flex justify-around items-center px-1 sm:hidden">
                                 {taskbarItems.map(item => {
                                     const isActive = activeWindowId === item.id;
                                     // Base classes for mobile buttons (no shadow/up-down effect, NO BORDER)
-                                    // FIX 1: Removed border-2 border-retro-border from baseClasses
                                     const baseClasses = 'flex flex-col items-center justify-center w-[3rem] h-[3rem] transition-all duration-200 bg-retro-panel relative shadow-none hover:shadow-none hover:translate-y-0';
                                     
                                     // Active state: flat, borders/text in accent color
-                                    // FIX 2: Removed border-retro-accent from activeClasses. Switched active border logic to hover/active text colour.
                                     const activeClasses = 'text-retro-accent';
                                     
                                     // Inactive state: flat, borders/text in dim color (or hover to accent)
@@ -2080,7 +2077,6 @@
                                         <button
                                             key={item.id}
                                             onClick={() => toggleWindow(item.id)} 
-                                            // FIX 2: Removed style={{ zIndex: item.zIndex }} as it's not needed for visual order here
                                             className={`${baseClasses} ${isActive ? activeClasses : inactiveClasses}`}
                                         >
                                             <item.icon size="1.25rem" />
@@ -2088,26 +2084,24 @@
                                     );
                                 })}
 
-                                {/* FIX 3: Move utility buttons to the bottom bar */}
+                                {/* Mobile Utilities Divider */}
                                 <div className="h-full border-l-2 border-retro-border/50 mx-1"></div>
 
                                 {utilItems.map(item => {
                                     // Base classes for utility buttons (no shadow/up-down effect, NO BORDER, NO BG)
                                     const baseClasses = 'w-[3rem] h-[3rem] !text-sm flex flex-col items-center justify-center transition-all duration-200 bg-retro-panel relative shadow-none hover:shadow-none hover:translate-y-0 !border-0';
                                     
-                                    // Since ToolIcon is used here, we override ToolIcon's base classes which include borders on desktop, 
-                                    // but ensure mobile explicitly avoids borders by combining base mobile classes with item-specific classes.
-                                    // FIX 2: Removed all border classes, simplified logic for text coloring based on status.
+                                    // FIX 2: Simplified color class logic for mobile utilities (Reset included here)
                                     let colorClass = 'text-retro-dim hover:text-retro-accent';
                                     if (item.id === 'crt') {
-                                        colorClass = crtEnabled ? '!text-green-500 hover:!text-green-400' : '!text-red-600 hover:!text-red-500';
+                                        colorClass = item.active ? '!text-green-500 hover:!text-green-400' : '!text-red-600 hover:!text-red-500';
                                     } else if (item.id === 'theme') {
                                         colorClass = isDayMode ? '!text-black hover:!text-zinc-700' : '!text-white hover:!text-zinc-200';
                                     } else if (item.id === 'a11y') {
                                         colorClass = a11yMenuOpen ? 'text-retro-accent !bg-retro-accent/10' : 'text-retro-dim hover:text-retro-accent';
                                     } else if (item.id === 'reset') {
-                                         // FIX 1: Reset button styling
-                                         colorClass = 'text-retro-dim hover:text-retro-accent';
+                                         // FIX: Reset button styling for mobile footer
+                                         colorClass = 'text-retro-dim hover:text-red-500'; // Subtle warning on mobile hover
                                     }
 
 
