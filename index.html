@@ -1119,6 +1119,41 @@
                 );
             });
 
+            // --- COMPONENT: TAB SELECT MENU (NEW) ---
+            const TabSelectMenu = React.memo(({ tabs, closeMenu, toggleWindow, activeWindowId }) => {
+                return (
+                    <div className="fixed left-0 right-0 top-12 bottom-16 w-full max-w-full bg-retro-panel border-2 border-retro-accent p-4 shadow-[0_0_20px_rgba(0,0,0,0.5)] z-[100] font-pixel text-xs overflow-hidden md:absolute md:w-64 md:bottom-4 md:left-24 md:top-auto">
+                        <CornerBrackets color="border-retro-accent" />
+                        
+                        <div className="flex justify-between items-center mb-4 border-b border-retro-border pb-2 sticky top-0 bg-retro-panel z-10">
+                            <span className="text-retro-accent font-bold tracking-widest">{format64Bit('SELECT WINDOW')}</span>
+                            <button onClick={closeMenu} className="text-retro-dim hover:text-retro-accent"><X size={14}/></button>
+                        </div>
+
+                        <div className="space-y-3 pt-2">
+                            {tabs.map(tab => (
+                                <div 
+                                    key={tab.id} 
+                                    onClick={() => { toggleWindow(tab.id); closeMenu(); }}
+                                    className={`flex items-center justify-between p-3 border-2 border-retro-border/50 cursor-pointer transition-all 
+                                        ${activeWindowId === tab.id ? 'bg-retro-accent text-retro-inverse' : 'bg-retro-bg/50 text-retro-text hover:bg-retro-accent/30'}`
+                                    }
+                                >
+                                    <div className="flex items-center gap-3 font-pixel-bold text-sm">
+                                        <tab.icon size={16} />
+                                        <span>{format64Bit(tab.title.replace(/\..*$/, ''))}</span>
+                                    </div>
+                                    {activeWindowId === tab.id && (
+                                        <span className="text-[0.6rem] font-pixel bg-retro-inverse text-retro-accent px-2 py-0.5">{format64Bit('ACTIVE')}</span>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )
+            });
+
+
             // --- WINDOW CONTENT DEFINITIONS (Memoized) ---
 
             const SkillBar = React.memo(({ skill }) => {
@@ -1704,18 +1739,20 @@
                 const [gameResetKey, setGameResetKey] = useState(0);
                 const [currentTime, setCurrentTime] = useState(format64Bit('SYNCING...'));
                 const [a11yMenuOpen, setA11yMenuOpen] = useState(false);
+                const [tabSelectMenuOpen, setTabSelectMenuOpen] = useState(false); // NEW: State for the Tab Select menu
                 const [a11ySettings, setA11ySettings] = useState({
                     font: false, motion: false, clean: false, textSize: 100, grayscale: false, hue: 0, spacing: false, links: false, highlight: false, guide: false
                 });
                 
                 // Window management state must be declared here
-                const [windowsState, setWindows] = useState([
+                const initialWindows = [
                     { id: 'about', title: 'USER_PROFILE.EXE', icon: User, isOpen: true, isMinimized: false, zIndex: 1, position: {x: 100, y: 50} },
                     { id: 'projects', title: 'PROJECTS.DIR', icon: Layers, isOpen: false, isMinimized: false, zIndex: 0, position: {x: 120, y: 70} },
                     { id: 'experience', title: 'LOGS.TXT', icon: FileText, isOpen: false, isMinimized: false, zIndex: 0, position: {x: 140, y: 90} },
                     { id: 'terminal', title: 'CMD_PROMPT', icon: Terminal, isOpen: false, isMinimized: false, zIndex: 0, position: {x: 160, y: 110} },
                     { id: 'contact', title: 'MAIL_CLIENT', icon: Mail, isOpen: false, isMinimized: false, zIndex: 0, position: {x: 180, y: 130} },
-                ]);
+                ];
+                const [windowsState, setWindows] = useState(initialWindows);
 
                 const [dragState, setDragState] = useState({ isDragging: false, windowId: null, offsetX: 0, offsetY: 0 });
 
@@ -1903,12 +1940,20 @@
                     return windowContents[id] || null;
                 };
                 
-                // Get list of navigation items for the Taskbar
-                // The order in which they appear here is the order in the mobile taskbar
-                const taskbarItems = windowsState.filter(w => ['about', 'projects', 'experience', 'contact'].includes(w.id));
+                // Get list of navigation items for the Tab Select menu
+                const tabSelectItems = initialWindows;
                 
                 // Define Reset button item separately for placement control
                 const resetItem = { id: 'reset', label: format64Bit('RESET'), icon: Grid, active: false, toggle: handleSystemReset };
+
+                // NEW: Define Select button item
+                const selectItem = { 
+                    id: 'select', 
+                    label: format64Bit('SELECT'), 
+                    icon: Layers, 
+                    active: tabSelectMenuOpen, 
+                    toggle: () => setTabSelectMenuOpen(!tabSelectMenuOpen) 
+                };
 
 
                 // FIX: Redefined utilItems array WITHOUT the reset button for cleaner iteration
@@ -2013,12 +2058,18 @@
                                 {/* Divider */}
                                 <div className="w-[2rem] h-[2px] bg-retro-border"></div> 
                                 
-                                <ToolIcon label={format64Bit('BIO')} icon={User} onClick={() => toggleWindow('about')} active={activeWindowId === 'about'} shadowDirection="down" />
-                                <ToolIcon label={format64Bit('WORK')} icon={Folder} onClick={() => toggleWindow('projects')} active={activeWindowId === 'projects'} shadowDirection="down" />
-                                <ToolIcon label={format64Bit('XP')} icon={FileText} onClick={() => toggleWindow('experience')} active={activeWindowId === 'experience'} shadowDirection="down" />
-                                <ToolIcon label={format64Bit('CMD')} icon={Terminal} onClick={() => toggleWindow('terminal')} active={activeWindowId === 'terminal'} shadowDirection="down" />
-                                <ToolIcon label={format64Bit('MSG')} icon={Mail} onClick={() => toggleWindow('contact')} active={activeWindowId === 'contact'} shadowDirection="down" />
-                                
+                                {/* DESKTOP WINDOW TABS (Still visible on desktop) */}
+                                {initialWindows.map(item => (
+                                    <ToolIcon 
+                                        key={item.id}
+                                        label={item.title.replace(/\..*$/, '')} 
+                                        icon={item.icon} 
+                                        onClick={() => toggleWindow(item.id)} 
+                                        active={activeWindowId === item.id} 
+                                        shadowDirection="down" 
+                                    />
+                                ))}
+
                                 <div className="w-[2rem] h-[2px] bg-retro-border"></div>
                                 
                                 {/* PC Utility Icons (CRT, THEME, SYS) */}
@@ -2042,6 +2093,15 @@
                                 toggleSetting={toggleA11ySetting} 
                                 setSetting={setA11ySettingValue}
                                 closeMenu={() => setA11yMenuOpen(false)}
+                            />
+                        )}
+
+                        {tabSelectMenuOpen && (
+                            <TabSelectMenu
+                                tabs={initialWindows}
+                                activeWindowId={activeWindowId}
+                                toggleWindow={toggleWindow}
+                                closeMenu={() => setTabSelectMenuOpen(false)}
                             />
                         )}
 
@@ -2106,28 +2166,17 @@
                                     <resetItem.icon size="1.25rem" />
                                 </button>
                                 
-                                {/* 2. Main Window Buttons (BIO, WORK, XP, CMD, MSG) */}
-                                {taskbarItems.map(item => {
-                                    const isActive = activeWindowId === item.id;
-                                    // Base classes for mobile buttons (no shadow/up-down effect, NO HOVER)
-                                    const baseClasses = 'flex flex-col items-center justify-center w-[3rem] h-[3rem] transition-all duration-200 bg-retro-panel relative shadow-none hover:shadow-none hover:translate-y-0';
-                                    
-                                    // Active state: flat, borders/text in accent color
-                                    const activeClasses = 'text-retro-accent';
-                                    
-                                    // Inactive state: flat, text in dim color (NO HOVER EFFECT)
-                                    const inactiveClasses = 'text-retro-dim';
+                                {/* NEW 2. TAB SELECT BUTTON */}
+                                <button
+                                    key={selectItem.id}
+                                    onClick={selectItem.toggle} 
+                                    className={`flex flex-col items-center justify-center w-[3rem] h-[3rem] transition-all duration-200 bg-retro-panel relative shadow-none hover:shadow-none hover:translate-y-0
+                                        ${selectItem.active ? 'text-retro-accent' : 'text-retro-dim'}`}
+                                    title={selectItem.label}
+                                >
+                                    <selectItem.icon size="1.25rem" />
+                                </button>
 
-                                    return (
-                                        <button
-                                            key={item.id}
-                                            onClick={() => toggleWindow(item.id)} 
-                                            className={`${baseClasses} ${isActive ? activeClasses : inactiveClasses}`}
-                                        >
-                                            <item.icon size="1.25rem" />
-                                        </button>
-                                    );
-                                })}
 
                                 {/* 3. Divider */}
                                 <div className="h-full border-l-2 border-retro-border/50 mx-1"></div>
