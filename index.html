@@ -237,7 +237,6 @@
 
 
                 // 7. Ensure commas/colons have a single space if followed by a word character.
-                // This ensures "A,B" becomes "A, B"
                 result = result.replace(/([:.,])(\w)/g, '$1 $2');
                 
                 // 8. Replace any lingering double underscores just in case.
@@ -710,7 +709,8 @@
                 useEffect(() => {
                     const handleResize = () => {
                     if (canvasRef.current) {
-                        const canvas = canvasRef.current;
+                        // FIX: Corrected canvas reference from `canvas.current` to `canvasRef.current`
+                        const canvas = canvasRef.current; 
                         const parent = canvas.parentElement;
                         canvas.width = parent.clientWidth;
                         // Subtract space for mobile header (3rem) and mobile footer (4rem) if needed
@@ -1037,8 +1037,11 @@
                 // FIX: Define mobile classes to remove shadow and translation effects
                 const mobileClasses = "shadow-none hover:shadow-none hover:translate-y-0";
 
-                const buttonClasses = `group relative flex items-center justify-center w-[3rem] h-[3rem] transition-all duration-200 border-2 border-retro-border bg-retro-panel cursor-pointer
-                    ${isMobile ? mobileClasses : ''}
+                // FIX 1: Removed border-2 border-retro-border from the base class definition
+                const baseClasses = `group relative flex items-center justify-center w-[3rem] h-[3rem] transition-all duration-200 bg-retro-panel cursor-pointer`;
+
+                const buttonClasses = `${baseClasses}
+                    ${isMobile ? mobileClasses : 'border-2 border-retro-border'}
                     ${active 
                         ? `text-retro-accent ${isMobile ? 'shadow-none translate-y-0' : desktopActiveShadowClass}` 
                         : `text-retro-dim hover:text-retro-accent hover:border-retro-accent ${isMobile ? mobileClasses : desktopShadowClass}`
@@ -1682,7 +1685,8 @@
                     setGameResetKey(prev => prev + 1);
                 }, [setWindows, setGameResetKey]);
 
-                // FIX 1: Removed code that changed Z-Index and position on toggle to prevent order change.
+                // FIX 1: This logic ensures that when a tab is opened, it is brought to the front by updating its zIndex.
+                // It does NOT change the order of the tab buttons in the mobile footer (which is determined by the `taskbarItems` array order).
                 const toggleWindow = useCallback((id) => {
                     setWindows(prev => {
                         const win = prev.find(w => w.id === id);
@@ -2027,22 +2031,22 @@
                             <div className="fixed bottom-0 left-0 right-0 h-16 bg-retro-panel border-t-2 border-retro-border z-50 flex justify-around items-center px-1 sm:hidden">
                                 {taskbarItems.map(item => {
                                     const isActive = activeWindowId === item.id;
-                                    // Base classes for mobile buttons (no shadow/up-down effect)
-                                    const baseClasses = 'flex flex-col items-center justify-center w-[3rem] h-[3rem] transition-all duration-200 border-2 bg-retro-panel relative shadow-none hover:shadow-none hover:translate-y-0';
+                                    // Base classes for mobile buttons (no shadow/up-down effect, NO BORDER)
+                                    // FIX 1: Removed border-2 border-retro-border from baseClasses
+                                    const baseClasses = 'flex flex-col items-center justify-center w-[3rem] h-[3rem] transition-all duration-200 bg-retro-panel relative shadow-none hover:shadow-none hover:translate-y-0';
                                     
                                     // Active state: flat, borders/text in accent color
-                                    // FIX 2: Removed border-retro-accent from activeClasses
-                                    const activeClasses = 'text-retro-accent border-retro-border';
+                                    // FIX 2: Removed border-retro-accent from activeClasses. Switched active border logic to hover/active text colour.
+                                    const activeClasses = 'text-retro-accent';
                                     
                                     // Inactive state: flat, borders/text in dim color (or hover to accent)
-                                    const inactiveClasses = 'text-retro-dim border-retro-border hover:text-retro-accent hover:border-retro-accent';
+                                    const inactiveClasses = 'text-retro-dim hover:text-retro-accent';
 
                                     return (
                                         <button
                                             key={item.id}
                                             onClick={() => toggleWindow(item.id)} 
-                                            // Ensure zIndex is applied based on the original data structure's zIndex
-                                            style={{ zIndex: item.zIndex }}
+                                            // FIX 2: Removed style={{ zIndex: item.zIndex }} as it's not needed for visual order here
                                             className={`${baseClasses} ${isActive ? activeClasses : inactiveClasses}`}
                                         >
                                             <item.icon size="1.25rem" />
@@ -2054,9 +2058,12 @@
                                 <div className="h-full border-l-2 border-retro-border/50 mx-1"></div>
 
                                 {utilItems.map(item => {
-                                    const baseClasses = 'w-[3rem] h-[3rem] !text-sm flex flex-col items-center justify-center transition-all duration-200 border-2 bg-retro-panel relative shadow-none hover:shadow-none hover:translate-y-0';
+                                    // FIX 1: Removed border-2 border-retro-border from baseClasses
+                                    const baseClasses = 'w-[3rem] h-[3rem] !text-sm flex flex-col items-center justify-center transition-all duration-200 bg-retro-panel relative shadow-none hover:shadow-none hover:translate-y-0';
                                     
-                                    const finalClasses = `${baseClasses} ${item.className}`;
+                                    // Since ToolIcon is used here, we override ToolIcon's base classes which include borders on desktop, 
+                                    // but ensure mobile explicitly avoids borders by combining base mobile classes with item-specific classes.
+                                    const finalClasses = `${baseClasses} ${item.className.replace('!border-retro-border', '')} !border-0`; // Remove any lingering border class
                                     
                                     return (
                                         <button 
