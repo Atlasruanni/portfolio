@@ -1056,14 +1056,26 @@
                     ? 'shadow-[0_0_10px_var(--accent-glow)] translate-y-[-2px] border-retro-accent'
                     : 'shadow-[0_0_10px_var(--accent-glow)] translate-y-[2px] border-retro-accent';
                 
-                // FIX: Define mobile classes to remove shadow and translation effects
+                // Define mobile classes to remove shadow and translation effects
                 const mobileClasses = "shadow-none hover:shadow-none hover:translate-y-0";
 
-                // FIX 1: Removed border-2 border-retro-border from the base class definition
+                // Base classes for the button
                 const baseClasses = `group relative flex items-center justify-center w-[3rem] h-[3rem] transition-all duration-200 bg-retro-panel cursor-pointer`;
 
                 // Calculate border classes (only applied if not mobile, handled by interpolation below)
                 const borderClasses = `border-2 border-retro-border`;
+
+                // Determine final hover classes for mobile/desktop
+                let finalHoverClasses = '';
+                if (isMobile) {
+                    // Mobile: Remove hover styles explicitly if they exist on the button
+                    finalHoverClasses = className.replace(/hover:!bg-[a-z]+-?\d*/g, '').replace(/hover:!text-[a-z]+-?\d*/g, '').replace(/hover:!border-[a-z]+-?\d*/g, '');
+                    // For mobile, the `className` only controls active state/non-hovered styles.
+                } else {
+                    // Desktop: Apply the standard effects plus custom classes
+                    finalHoverClasses = className;
+                }
+
 
                 const buttonClasses = `${baseClasses}
                     ${isMobile ? mobileClasses : borderClasses}
@@ -1071,7 +1083,7 @@
                         ? `text-retro-accent ${isMobile ? 'shadow-none translate-y-0' : desktopActiveShadowClass}` 
                         : `text-retro-dim hover:text-retro-accent hover:border-retro-accent ${isMobile ? mobileClasses : desktopShadowClass}`
                     }
-                    ${className}
+                    ${finalHoverClasses}
                 `;
 
                 return (
@@ -1905,7 +1917,8 @@
                         icon: isDayMode ? Moon : Sun, 
                         active: false, 
                         toggle: () => setIsDayMode(!isDayMode),
-                        // Theme button now uses desktop border and standard dim/accent hover
+                        // Theme button now uses desktop border and strong hover effect
+                        // FIX: Added explicit border for desktop version (ToolIcon handles mobile border removal)
                         // FIX: Reverted to high contrast background hover as requested
                         className: isDayMode
                             ? "border-2 border-retro-border text-retro-dim hover:!bg-black hover:!text-white hover:!border-black"
@@ -1915,8 +1928,8 @@
                     { id: 'a11y', label: format64Bit('SYS'), icon: Accessibility, active: a11yMenuOpen, toggle: () => setA11yMenuOpen(!a11yMenuOpen),
                         // FIX: Updated hover styles to use blue background
                         className: a11yMenuOpen
-                            ? "text-retro-accent !bg-retro-accent/10" 
-                            : "text-retro-dim hover:!bg-blue-500 hover:!text-white hover:!border-blue-500"
+                            ? "border-2 border-retro-border text-retro-accent !bg-retro-accent/10" 
+                            : "border-2 border-retro-border text-retro-dim hover:!bg-blue-500 hover:!text-white hover:!border-blue-500"
                     }
                 ];
 
@@ -2007,7 +2020,7 @@
                                         active={item.active} 
                                         shadowDirection="down" 
                                         // FIX: Conditionally add border classes based on item ID for desktop only
-                                        className={item.id === 'theme' ? `${item.className} border-2 border-retro-border` : item.className}
+                                        className={item.className}
                                     />
                                 ))}
                             </div>
@@ -2075,21 +2088,19 @@
                                 {taskbarItems.map(item => {
                                     const isActive = activeWindowId === item.id;
                                     // Base classes for mobile buttons (no shadow/up-down effect, NO BORDER)
-                                    // FIX 1: Removed border-2 border-retro-border from baseClasses
+                                    // FIX: Removed hover effects (`hover:*` classes) from inactive items for mobile
                                     const baseClasses = 'flex flex-col items-center justify-center w-[3rem] h-[3rem] transition-all duration-200 bg-retro-panel relative shadow-none hover:shadow-none hover:translate-y-0';
                                     
                                     // Active state: flat, borders/text in accent color
-                                    // FIX 2: Removed border-retro-accent from activeClasses. Switched active border logic to hover/active text colour.
                                     const activeClasses = 'text-retro-accent';
                                     
-                                    // Inactive state: flat, borders/text in dim color (or hover to accent)
-                                    const inactiveClasses = 'text-retro-dim hover:text-retro-accent';
+                                    // Inactive state: flat, text in dim color (NO HOVER EFFECT)
+                                    const inactiveClasses = 'text-retro-dim';
 
                                     return (
                                         <button
                                             key={item.id}
                                             onClick={() => toggleWindow(item.id)} 
-                                            // FIX 2: Removed style={{ zIndex: item.zIndex }} as it's not needed for visual order here
                                             className={`${baseClasses} ${isActive ? activeClasses : inactiveClasses}`}
                                         >
                                             <item.icon size="1.25rem" />
@@ -2104,20 +2115,20 @@
                                     // Base classes for utility buttons (no shadow/up-down effect, NO BORDER, NO BG)
                                     const baseClasses = 'w-[3rem] h-[3rem] !text-sm flex flex-col items-center justify-center transition-all duration-200 bg-retro-panel relative shadow-none hover:shadow-none hover:translate-y-0 !border-0';
                                     
-                                    // Since ToolIcon is used here, we override ToolIcon's base classes which include borders on desktop, 
-                                    // but ensure mobile explicitly avoids borders by combining base mobile classes with item-specific classes.
-                                    // FIX 2: Removed all border classes, simplified logic for text coloring based on status.
-                                    let colorClass = 'text-retro-dim hover:text-retro-accent';
+                                    // FIX: Removed all hover styles from the mobile utility buttons' class logic
+                                    let colorClass = 'text-retro-dim';
                                     if (item.id === 'crt') {
-                                        colorClass = crtEnabled ? '!text-green-500 hover:!text-green-400' : '!text-red-600 hover:!text-red-500';
+                                        // Only apply colors based on active state, NOT hover
+                                        colorClass = crtEnabled ? '!text-green-500' : '!text-red-600';
                                     } else if (item.id === 'theme') {
-                                        // FIX: Reverted to high contrast background hover as requested
-                                        colorClass = isDayMode ? 'text-retro-dim hover:!bg-black hover:!text-white' : 'text-retro-dim hover:!bg-white hover:!text-black';
+                                        // Only apply colors based on mode, NOT hover
+                                        colorClass = isDayMode ? 'text-black' : 'text-white';
                                     } else if (item.id === 'a11y') {
-                                        colorClass = a11yMenuOpen ? 'text-retro-accent !bg-retro-accent/10' : 'text-retro-dim hover:!bg-blue-500 hover:!text-white';
+                                        // Only apply colors based on open state, NOT hover
+                                        colorClass = a11yMenuOpen ? 'text-retro-accent !bg-retro-accent/10' : 'text-retro-dim';
                                     } else if (item.id === 'reset') {
                                          // FIX: Reset button styling for mobile footer
-                                         colorClass = 'text-retro-dim hover:text-red-500'; // Subtle warning on mobile hover
+                                         colorClass = 'text-retro-dim'; 
                                     }
 
 
