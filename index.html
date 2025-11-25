@@ -1024,25 +1024,34 @@
 
             // --- COMPONENT: TOOL ICON (Adjusted to allow mobile header usage) (Memoized) ---
             const ToolIcon = React.memo(({ label, icon: Icon, onClick, active, shadowDirection = 'down', className = '' }) => {
-                const shadowClass = shadowDirection === 'up' 
+                // Determine if we are on mobile (for removing shadow/translate)
+                const isMobile = window.innerWidth < 640;
+
+                const desktopShadowClass = shadowDirection === 'up' 
                     ? 'shadow-[0_-4px_0px_var(--accent-dim)] hover:shadow-[0_0_15px_var(--accent-glow)] hover:translate-y-[-2px]'
                     : 'shadow-[0_4px_0px_var(--accent-dim)] hover:shadow-[0_0_15px_var(--accent-glow)] hover:translate-y-[2px]';
                         
-                const activeShadowClass = shadowDirection === 'up'
+                const desktopActiveShadowClass = shadowDirection === 'up'
                     ? 'shadow-[0_0_10px_var(--accent-glow)] translate-y-[-2px] border-retro-accent'
                     : 'shadow-[0_0_10px_var(--accent-glow)] translate-y-[2px] border-retro-accent';
+                
+                // FIX: Define mobile classes to remove shadow and translation effects
+                const mobileClasses = "shadow-none hover:shadow-none hover:translate-y-0";
+
+                const buttonClasses = `group relative flex items-center justify-center w-[3rem] h-[3rem] transition-all duration-200 border-2 border-retro-border bg-retro-panel cursor-pointer
+                    ${isMobile ? mobileClasses : ''}
+                    ${active 
+                        ? `text-retro-accent ${isMobile ? 'shadow-none translate-y-0' : desktopActiveShadowClass}` 
+                        : `text-retro-dim hover:text-retro-accent hover:border-retro-accent ${isMobile ? mobileClasses : desktopShadowClass}`
+                    }
+                    ${className}
+                `;
 
                 return (
                     <button 
                         onClick={onClick}
                         // Use rem based sizing (w-12 h-12 to w-[3rem] h-[3rem])
-                        className={`group relative flex items-center justify-center w-[3rem] h-[3rem] transition-all duration-200 border-2 border-retro-border bg-retro-panel cursor-pointer
-                            ${active 
-                                ? `text-retro-accent ${activeShadowClass}` 
-                                : `text-retro-dim hover:text-retro-accent hover:border-retro-accent ${shadowClass}`
-                            }
-                            ${className}
-                        `}
+                        className={buttonClasses}
                         title={label}
                     >
                         <Icon size="1.5rem" strokeWidth={2} />
@@ -1982,10 +1991,14 @@
                             <div className="fixed bottom-0 left-0 right-0 h-16 bg-retro-panel border-t-2 border-retro-border z-50 flex justify-around items-center px-1 sm:hidden">
                                 {taskbarItems.map(item => {
                                     const isActive = activeWindowId === item.id;
-                                    const baseClasses = 'flex flex-col items-center justify-center w-[3rem] h-[3rem] transition-all duration-200 border-2 bg-retro-panel relative';
-                                    const shadowClass = 'shadow-[0_-4px_0px_var(--accent-dim)] hover:shadow-[0_0_15px_var(--accent-glow)] hover:translate-y-[-2px]';
-                                    const activeClasses = 'text-retro-accent border-retro-accent shadow-[0_0_10px_var(--accent-glow)] translate-y-[-2px]';
-                                    const inactiveClasses = 'text-retro-dim border-retro-border hover:text-retro-accent hover:border-retro-accent ' + shadowClass;
+                                    // Base classes for mobile buttons (no shadow/up-down effect)
+                                    const baseClasses = 'flex flex-col items-center justify-center w-[3rem] h-[3rem] transition-all duration-200 border-2 bg-retro-panel relative shadow-none hover:shadow-none hover:translate-y-0';
+                                    
+                                    // Active state: flat, borders/text in accent color
+                                    const activeClasses = 'text-retro-accent border-retro-accent';
+                                    
+                                    // Inactive state: flat, borders/text in dim color (or hover to accent)
+                                    const inactiveClasses = 'text-retro-dim border-retro-border hover:text-retro-accent hover:border-retro-accent';
 
                                     return (
                                         <button
@@ -1994,7 +2007,6 @@
                                             className={`${baseClasses} ${isActive ? activeClasses : inactiveClasses}`}
                                         >
                                             <item.icon size="1.25rem" />
-                                            {/* FIX 1: Removed text label */}
                                         </button>
                                     );
                                 })}
@@ -2002,17 +2014,26 @@
                                 {/* FIX 3: Move utility buttons to the bottom bar */}
                                 <div className="h-full border-l-2 border-retro-border/50 mx-1"></div>
 
-                                {utilItems.map(item => (
-                                    <ToolIcon 
-                                        key={item.id}
-                                        label={item.label}
-                                        icon={item.icon} 
-                                        onClick={item.toggle} 
-                                        active={item.active} 
-                                        shadowDirection="up" 
-                                        className={`w-[3rem] h-[3rem] !text-sm ${item.className}`}
-                                    />
-                                ))}
+                                {utilItems.map(item => {
+                                    // Base classes for mobile buttons (no shadow/up-down effect)
+                                    const baseClasses = 'w-[3rem] h-[3rem] !text-sm flex flex-col items-center justify-center transition-all duration-200 border-2 bg-retro-panel relative shadow-none hover:shadow-none hover:translate-y-0';
+                                    
+                                    // Custom class handling for CRT/Theme/A11Y buttons
+                                    // Note: `item.className` holds custom border/text colors and overrides the default mobile classes below.
+                                    
+                                    const finalClasses = `${baseClasses} ${item.className}`;
+                                    
+                                    return (
+                                        <button 
+                                            key={item.id}
+                                            onClick={item.toggle} 
+                                            className={finalClasses}
+                                            title={item.label}
+                                        >
+                                            <item.icon size="1.5rem" strokeWidth={2} />
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>
