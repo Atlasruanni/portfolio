@@ -353,7 +353,8 @@
                 about: "", 
                 email: "yilinzhu@atlasruanni.com",
                 social: {
-                    instagram: "https://instagram.com/atlasruanni",
+                    // FIX: Changed Instagram link from atlasruanni to gevin_zhu
+                    instagram: "https://instagram.com/gevin_zhu",
                     linkedin: "https://www.linkedin.com/in/gevin-zhu",
                     resume: "#" 
                 }
@@ -597,9 +598,8 @@
                 if (stage === 'WELCOME') {
                     // This is the WELCOME screen showing "WELCOME"
                     return (
-                        // This element provides the black background for the transition
+                        // FIX: Ensure full centering using flex utility classes on both containers
                         <div className="fixed inset-0 bg-black z-[100] flex flex-col justify-center items-center font-pixel text-retro-accent transition-opacity duration-500" style={{opacity: welcomeOpacity}}>
-                            {/* FIX: Reduced text size on mobile (sm:hidden) from text-6xl to text-4xl */}
                             <h1 className={`text-4xl sm:text-6xl font-pixel-bold text-retro-accent drop-shadow-[0_0_15px_var(--accent-glow)] transition-opacity duration-500`}
                             >
                                 {format64Bit('WELCOME')}
@@ -609,22 +609,21 @@
                 }
                 
                 // RENDER: LOADING SCREEN
-                // Use opacity-0 for fade out when transitioning to WELCOME/DONE
-                // When stage is 'LOADING' or 'DONE', we use this component. The WELCOME stage is handled above.
                 const opacityClass = (stage === 'LOADING') ? 'opacity-100' : 'opacity-0 pointer-events-none';
 
                 // Only render the loading screen wrapper if we are in the LOADING stage or DONE (during its brief fade out)
                 if (stage === 'LOADING' || stage === 'DONE') {
                     return (
+                        // FIX: Ensure full centering using flex utility classes on both containers
                         <div className={`fixed inset-0 bg-black z-[100] p-8 font-pixel text-retro-accent text-lg md:text-xl flex flex-col justify-center items-center overflow-hidden transition-opacity duration-500 ${opacityClass}`}>
                             
-                            <div className={`w-full max-w-xl mx-auto space-y-4`}> 
+                            {/* FIX: Changed mt-[-2rem] back to mt-[-1rem] for better vertical centering correction */}
+                            <div className={`w-full max-w-xl mx-auto space-y-4 mt-[-1rem]`}> 
                                 
                                 {/* FIX: Reduced text size on mobile from text-3xl to text-xl */}
                                 <h1 className="text-xl sm:text-3xl font-pixel-bold text-center drop-shadow-[0_0_10px_var(--accent-glow)]">ATLAS_OS V64.0</h1>
 
                                 {/* Status Text */}
-                                {/* FIX: Reduced text size on mobile from text-sm to text-xs */}
                                 <div className="flex items-center justify-start text-base text-retro-dim/80 h-6">
                                     <span className="text-retro-accent">{format64Bit('STATUS:')}</span>
                                     <span className={`ml-2 text-retro-text text-xs sm:text-sm ${progress < 100 ? 'animate-pulse' : ''}`}>
@@ -967,7 +966,7 @@
                     <div className="absolute inset-0 flex items-center justify-center z-0 sm:p-0 h-full w-full" onClick={() => window.focus()}>
                     <canvas ref={canvasRef} className="absolute inset-0 z-0 block opacity-95" />
                     
-                    {/* FIX: Centered content relative to the absolute inset area. Added negative margin to push up 2 lines worth of space (2rem). */}
+                    {/* FIX: Centered content relative to the absolute inset area. Adjusted negative margin to push up 2 lines worth of space (2rem). */}
                     <div className="relative z-10 text-center mt-[-2rem]">
                         {gameStatus === 'IDLE' && (
                         <div className="animate-pulse space-y-4"> {/* FIX: Reverted space-y-2 to space-y-4 for better spacing */}
